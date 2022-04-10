@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"go-grep/grep"
-	"go-grep/ui"
 )
 
 func main() {
@@ -14,6 +13,6 @@ func main() {
 		fmt.Println(line)
 	}
 
-	ui.Initialize()
+	Initialize()
 
 }
