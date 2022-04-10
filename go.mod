@@ -1,4 +1,4 @@
-module friendly-grep
+module go-grep
 
 go 1.17
 
