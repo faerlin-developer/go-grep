@@ -17,7 +17,7 @@ func (jc *JobChannel) Receive() Job {
 	return <-jc.jobs
 }
 
-func NewJobChannel(size int) JobChannel {
+func NewJobChannel(size int) *JobChannel {
 	jobs := make(chan Job, size)
-	return JobChannel{jobs}
+	return &JobChannel{jobs}
 }

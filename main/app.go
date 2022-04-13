@@ -19,9 +19,13 @@ func init() {
 
 func main() {
 
-	result := grep.Grep("test_dir/file1.txt", "fox")
-	for _, line := range result.Line() {
-		log.Println(line)
+	result, err := grep.GrepFile("test_dir/file3.txt", "fox")
+	if err != nil {
+		log.Println(err.Error())
+	} else {
+		for _, line := range result.Line() {
+			log.Println(line)
+		}
 	}
 
 	top := createTopComponent()

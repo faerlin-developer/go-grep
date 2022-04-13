@@ -36,7 +36,7 @@ func NewResult(filepath string, searchTerm string) *Result {
 	return &Result{filepath, searchTerm, make([]string, 0), make([]int, 0)}
 }
 
-func NewResultChannel(size int) ResultChannel {
+func NewResultChannel(size int) *ResultChannel {
 	results := make(chan Result, size)
-	return ResultChannel{results}
+	return &ResultChannel{results}
 }
