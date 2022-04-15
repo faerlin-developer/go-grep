@@ -1,3 +1,3 @@
-# __friendly-grep__
+# __go-grep__
 
 In progress ...
