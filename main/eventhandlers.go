@@ -2,23 +2,31 @@ package main
 
 import (
 	"fmt"
+	"go-grep/grep"
 	"log"
+	"os"
+	"strings"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 )
 
 func radioGroupHandler(selectedOption string) {
-	state.SetSelectedOption(selectedOption)
-	log.Println(fmt.Sprintf("selected %v option", state.GetSelectedOption().Value()))
+	state.UserInput.SetSelectedOption(selectedOption)
+	log.Println(fmt.Sprintf("selected %v option", state.UserInput.GetSelectedOption().Value()))
 }
 
 func browseButtonHandler() {
-	switch state.GetSelectedOption() {
+
+	switch state.UserInput.GetSelectedOption() {
 	case File:
-		dialog.ShowFileOpen(fileDialogButtonHandler, window)
+		d := dialog.NewFileOpen(fileDialogButtonHandler, window)
+		d.Resize(fyne.NewSize(800, 600))
+		d.Show()
 	case Directory:
-		dialog.ShowFolderOpen(folderDialogButtonHandler, window)
+		d := dialog.NewFolderOpen(folderDialogButtonHandler, window)
+		d.Resize(fyne.NewSize(800, 600))
+		d.Show()
 	default:
 		log.Println("Unrecognized radio option")
 		window.Close()
@@ -26,23 +34,27 @@ func browseButtonHandler() {
 }
 
 func formSubmitHandler() {
-	log.Println("Form submitted:", state.GetSearchPath())
-	log.Println("Form submitted:", state.GetSearchTerm())
-	state.AppendData("new item")
 
-	// err := errors.New("a dummy error message")
-	// dialog.ShowError(err, window)
-	d := dialog.NewInformation("Information", "You should know this thing...", window)
-	d.Show()
-
-	//time.Sleep(2 * time.Second)
-	//d.Hide()
+	infoDialog := dialog.NewInformation("Info", "Processing...", window)
+	infoDialog.Show()
+	err := grepAndDisplay()
+	if err != nil {
+		infoDialog.Hide()
+		log.Println(err.Error())
+		dialog.ShowError(err, window)
+	} else {
+		infoDialog.Hide()
+	}
 }
 
 func formCancelHandler() {
-	state.ClearData()
-	state.ClearSearchPath()
-	state.ClearSearchTerm()
+	// TODO: introduction or instructions on text grid
+	cwd, _ := os.Getwd()
+	state.View.Clear()
+	state.View.AppendText("")
+	state.View.AppendText(fmt.Sprintf("Current working directory: %v", cwd))
+	state.UserInput.ClearSearchPath()
+	state.UserInput.ClearSearchTerm()
 
 	log.Println("clear all")
 }
@@ -56,8 +68,9 @@ func fileDialogButtonHandler(reader fyne.URIReadCloser, err error) {
 		log.Println("file dialog cancelled")
 		return
 	}
-	log.Println(reader.URI().String())
 
+	filepath := getPath(reader.URI().String())
+	state.UserInput.SetSearchPath(filepath)
 }
 
 func folderDialogButtonHandler(list fyne.ListableURI, err error) {
@@ -70,11 +83,47 @@ func folderDialogButtonHandler(list fyne.ListableURI, err error) {
 		return
 	}
 
-	children, err := list.List()
+	//children, err := list.List()
+	//if err != nil {
+	//	dialog.ShowError(err, window)
+	//	return
+	//}
+
+	//out := fmt.Sprintf("Folder %s (%d children):\n%s", list.Name(), len(children), list.String())
+	//dialog.ShowInformation("Folder Open", out, window)
+
+	dirpath := getPath(list.String())
+	state.UserInput.SetSearchPath(dirpath)
+}
+
+func getPath(uri string) string {
+	return strings.Split(uri, "file://")[1]
+}
+
+func grepAndDisplay() error {
+
+	searchPath := state.UserInput.GetSearchPath()
+	searchTerm := state.UserInput.GetSearchTerm()
+
+	results, err := grep.Grep(searchPath, searchTerm)
 	if err != nil {
-		dialog.ShowError(err, window)
-		return
+		return err
 	}
-	out := fmt.Sprintf("Folder %s (%d children):\n%s", list.Name(), len(children), list.String())
-	dialog.ShowInformation("Folder Open", out, window)
+
+	state.View.Clear()
+	state.View.TextGrid.ShowLineNumbers = true
+
+	for result := range results.Channel {
+		displayResult(result)
+	}
+
+	log.Println("Finished processing all results")
+
+	return nil
+}
+
+func displayResult(result grep.Result) {
+	for _, line := range result.Lines {
+		state.View.AppendResult(result.Filepath, line.Line, line.LineNumber, line.Indices)
+	}
 }

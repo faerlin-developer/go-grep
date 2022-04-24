@@ -1,23 +1,23 @@
 package grep
 
 type Job struct {
-	searchTerm string
-	filepath   string
+	filepath      string
+	searchPattern string
 }
 
-type JobChannel struct {
-	jobs chan Job
+type Jobs struct {
+	channel chan Job
 }
 
-func (jc *JobChannel) Send(filepath string, searchTerm string) {
-	jc.jobs <- Job{filepath, searchTerm}
+func (jobs *Jobs) send(filepath string, searchPattern string) {
+	jobs.channel <- Job{filepath, searchPattern}
 }
 
-func (jc *JobChannel) Receive() Job {
-	return <-jc.jobs
+func (jobs *Jobs) close() {
+	close(jobs.channel)
 }
 
-func NewJobChannel(size int) *JobChannel {
+func newJobs(size int) *Jobs {
 	jobs := make(chan Job, size)
-	return &JobChannel{jobs}
+	return &Jobs{jobs}
 }

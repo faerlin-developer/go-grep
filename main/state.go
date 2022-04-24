@@ -1,10 +1,31 @@
 package main
 
 import (
+	"fmt"
+	"image/color"
+	"strconv"
+
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/widget"
 )
 
-type RadioOption int
+type State struct {
+	UserInput UserInput
+	View      View
+}
+
+type UserInput struct {
+	SelectedOption RadioOption
+	SearchPath     *binding.String
+	SearchPattern  *binding.String
+}
+
+type View struct {
+	Scroll   *container.Scroll
+	TextGrid *widget.TextGrid
+	nextRow  int
+}
 
 const (
 	File RadioOption = iota
@@ -12,64 +33,115 @@ const (
 	Unrecognized
 )
 
-type State struct {
-	SelectedOption RadioOption
-	SearchPath     *binding.String
-	SearchTerm     *binding.String
-	Data           binding.ExternalStringList
-}
+type RadioOption int
+
+// ----- RadioOption -----
 
 func (r RadioOption) Value() string {
 	return [...]string{"File", "Directory", ""}[r]
 }
 
-func (s *State) SetSelectedOption(selectedOption string) {
-	s.SelectedOption = toRadioOption(selectedOption)
+// ----- View -----
+
+func (v *View) SetText(row int, text string) {
+
+	runes := []rune(text)
+	for i := 0; i < len(runes); i++ {
+		v.TextGrid.SetRune(row, i, runes[i])
+	}
 }
 
-func (s *State) GetSelectedOption() RadioOption {
-	return s.SelectedOption
+func (v *View) Clear() {
+	textGrid := widget.NewTextGrid()
+	textGrid.ShowLineNumbers = false
+	v.TextGrid = textGrid
+	v.Scroll.Content = textGrid
+	v.nextRow = 0
+	v.Scroll.Refresh()
 }
 
-func (s *State) SetSearchPath(searchPath string) {
-	(*(s.SearchPath)).Set(searchPath)
+// ----- UserInput -----
+
+func (u *UserInput) SetSelectedOption(selectedOption string) {
+	u.SelectedOption = toRadioOption(selectedOption)
 }
 
-func (s *State) GetSearchPath() string {
-	value, _ := (*(s.SearchPath)).Get()
+func (u *UserInput) GetSelectedOption() RadioOption {
+	return u.SelectedOption
+}
+
+func (u *UserInput) SetSearchPath(searchPath string) {
+	(*(u.SearchPath)).Set(searchPath)
+}
+
+func (u *UserInput) GetSearchPath() string {
+	value, _ := (*(u.SearchPath)).Get()
 	return value
 }
 
-func (s *State) ClearSearchPath() {
-	(*(s.SearchPath)).Set("")
+func (u *UserInput) ClearSearchPath() {
+	(*(u.SearchPath)).Set("")
 }
 
-func (s *State) SetSearchTerm(searchTerm string) {
-	(*(s.SearchTerm)).Set(searchTerm)
-}
-
-func (s *State) GetSearchTerm() string {
-	value, _ := (*(s.SearchTerm)).Get()
+func (u *UserInput) GetSearchTerm() string {
+	value, _ := (*(u.SearchPattern)).Get()
 	return value
 }
 
-func (s *State) ClearSearchTerm() {
-	(*(s.SearchTerm)).Set("")
+func (u *UserInput) ClearSearchTerm() {
+	(*(u.SearchPattern)).Set("")
 }
 
-func (s *State) ClearData() {
-	s.Data.Set([]string{})
+func (v *View) AppendText(text string) {
+	nextRow := v.nextRow
+	v.SetText(nextRow, text)
+	v.nextRow += 1
 }
 
-func (s *State) AppendData(line string) {
-	s.Data.Append(line)
+func (v *View) AppendResult(filepath string, line string, lineNumber int, indices [][]int) {
+
+	result := fmt.Sprintf("%v:%v:%v", filepath, lineNumber, line)
+	v.AppendText(result)
+
+	v.TextGrid.SetStyleRange(v.nextRow-1, 0, v.nextRow-1, len(filepath)-1,
+		&widget.CustomTextGridStyle{FGColor: &color.NRGBA{R: 51, G: 153, B: 255, A: 255}})
+
+	numDigit := getNumDigits(lineNumber)
+
+	for _, idx := range indices {
+		v.TextGrid.SetStyleRange(v.nextRow-1, len(filepath)+1, v.nextRow-1,
+			len(filepath)+1+numDigit, &widget.CustomTextGridStyle{FGColor: &color.NRGBA{R: 0, G: 255, B: 0, A: 255}})
+		v.TextGrid.SetStyleRange(v.nextRow-1, len(filepath)+2+numDigit+idx[0], v.nextRow-1,
+			len(filepath)+2+numDigit+idx[1]-1, &widget.CustomTextGridStyle{FGColor: &color.NRGBA{R: 255, G: 204, B: 0, A: 255}})
+	}
 }
+
+// ----- Public Utility Functions ----
 
 func NewState() State {
+	userInput := NewUserInput()
+	view := NewView()
+	return State{UserInput: userInput, View: view}
+}
+
+func NewView() View {
+	textGrid := widget.NewTextGrid()
+	textGrid.ShowLineNumbers = false
+	scroll := container.NewScroll(textGrid)
+	return View{Scroll: scroll, TextGrid: textGrid, nextRow: 0}
+}
+
+func NewUserInput() UserInput {
 	searchPath := binding.NewString()
-	searchTerm := binding.NewString()
-	data := binding.BindStringList(&[]string{"Item 1", "Item 2", "Item 3"})
-	return State{SelectedOption: File, SearchPath: &searchPath, SearchTerm: &searchTerm, Data: data}
+	searchPattern := binding.NewString()
+	return UserInput{SelectedOption: File, SearchPath: &searchPath, SearchPattern: &searchPattern}
+}
+
+// ----- Private Utility Functions -----
+
+func getNumDigits(x int) int {
+	x_as_string := strconv.Itoa(x)
+	return len(x_as_string)
 }
 
 func toRadioOption(value string) RadioOption {
