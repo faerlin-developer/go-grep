@@ -71,7 +71,12 @@ func (v *View) ShowDefaultView() {
 	state.View.AppendText("")
 	state.View.AppendText("┌─┐┌─┐   ┌─┐┬─┐┌─┐┌─┐")
 	state.View.AppendText("│ ┬│ │───│ ┬├┬┘├┤ ├─┘")
-	state.View.AppendText("└─┘└─┘   └─┘┴└─└─┘┴   is a blah blah blah ")
+	state.View.AppendText("└─┘└─┘   └─┘┴└─└─┘┴  is a graphical utility for searching text files for lines")
+	state.View.AppendText("that match a regular expression. The number of light-weight threads use for")
+	state.View.AppendText("pattern matching and buffer size for job processing can be modified in the")
+	state.View.AppendText("settings menu.")
+	state.View.AppendText("")
+	state.View.AppendText("Note that the utility will search the provided pattern only on text files.")
 	state.View.AppendText("")
 	state.View.AppendText(fmt.Sprintf("Current working directory: %v", cwd))
 	state.View.TextGrid.ShowLineNumbers = false

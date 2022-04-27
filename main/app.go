@@ -18,11 +18,6 @@ func init() {
 	window = application.NewWindow("go-grep")
 }
 
-// TODO:
-// (1) Menu for setttings (https://github.com/fyne-io/fyne/blob/master/cmd/fyne_demo/main.go)
-//       - numberWorkers
-//       - bufferSize
-
 func main() {
 
 	menu := createMenu()
