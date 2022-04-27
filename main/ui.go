@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"go-grep/grep"
 	"image/color"
-	"os"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -12,13 +11,15 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+func createMenu() *fyne.MainMenu {
+
+	settingsMenuItem := fyne.NewMenuItem("Settings", settingsMenuItemHandler)
+	menu := fyne.NewMenu("Menu", settingsMenuItem)
+	return fyne.NewMainMenu(menu)
+}
+
 func createMiddleComponent() *container.Scroll {
-
-	cwd, _ := os.Getwd()
-	state.View.AppendText("")
-	state.View.AppendText("")
-	state.View.AppendText(fmt.Sprintf("Current working directory: %v", cwd))
-
+	state.View.ShowDefaultView()
 	return state.View.Scroll
 }
 
@@ -49,4 +50,26 @@ func createBottomComponent() *fyne.Container {
 	form.OnCancel = formCancelHandler
 
 	return container.New(layout.NewVBoxLayout(), line, form)
+}
+
+func settingsMenuItemHandler() {
+	settingsWindow := application.NewWindow("Settings")
+
+	numberWorkersEntry := NewNumericalEntry(state.UserInput.NumberWorkers)
+	bufferSizeEntry := NewNumericalEntry(state.UserInput.BufferSize)
+
+	numberFormItem := widget.NewFormItem("Number of Workers", numberWorkersEntry)
+	bufferSizeFormItem := widget.NewFormItem("Buffer Size", bufferSizeEntry)
+	form := widget.NewForm(numberFormItem, bufferSizeFormItem)
+
+	form.OnSubmit = func() {
+		state.UserInput.SetNumberWorkers(grep.DefaultNumberWorkers)
+		state.UserInput.SetBufferSize(grep.DefaultBufferSize)
+	}
+
+	form.SubmitText = "Set Default Values"
+
+	settingsWindow.SetContent(form)
+	settingsWindow.CenterOnScreen()
+	settingsWindow.Show()
 }

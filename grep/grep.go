@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"sync"
+
+	"golang.org/x/tools/godoc/util"
 )
 
 type Config struct {
@@ -16,8 +18,11 @@ type Config struct {
 
 var Conf Config
 
+const DefaultNumberWorkers = 10
+const DefaultBufferSize = 100
+
 func init() {
-	Conf = Config{numberWorkers: 10, bufferSize: 100}
+	Conf = Config{numberWorkers: DefaultNumberWorkers, bufferSize: DefaultBufferSize}
 }
 
 func Grep(searchPath string, searchPattern string) (*Results, error) {
@@ -48,25 +53,29 @@ func Grep(searchPath string, searchPattern string) (*Results, error) {
 
 func GrepFile(filepath string, searchPattern string) (*Result, error) {
 
-	file, err := os.Open(filepath)
+	isText, err := isTextFile(filepath)
 	if err != nil {
 		return nil, err
 	}
 
-	defer file.Close()
-
-	regex, _ := regexp.Compile(searchPattern)
 	result := NewResult(filepath, searchPattern)
-	scanner := bufio.NewScanner(file)
-	lineNumber := 1
-	for scanner.Scan() {
-		line := scanner.Text()
 
-		indices := regex.FindAllStringSubmatchIndex(line, -1)
-		if len(indices) != 0 {
-			result.AddLine(line, lineNumber, indices)
+	if !isText {
+		result.IsTextFile = false
+	} else {
+		file, _ := os.Open(filepath)
+		defer file.Close()
+		regex, _ := regexp.Compile(searchPattern)
+		scanner := bufio.NewScanner(file)
+		lineNumber := 1
+		for scanner.Scan() {
+			line := scanner.Text()
+			indices := regex.FindAllStringSubmatchIndex(line, -1)
+			if len(indices) != 0 {
+				result.AddLine(line, lineNumber, indices)
+			}
+			lineNumber += 1
 		}
-		lineNumber += 1
 	}
 
 	return result, nil
@@ -122,10 +131,26 @@ func deployWorker(jobs *Jobs, results *Results, wg *sync.WaitGroup) {
 
 	for job := range jobs.channel {
 		result, _ := GrepFile(job.filepath, job.searchPattern)
-		if !result.IsEmpty() {
-			results.Send(*result)
-		}
+		results.Send(*result)
 	}
 
 	wg.Done()
+}
+
+func isTextFile(filepath string) (bool, error) {
+
+	file, err := os.Open(filepath)
+	if err != nil {
+		return false, err
+	}
+
+	defer file.Close()
+
+	data := make([]byte, 1024)
+	num_bytes, err := file.Read(data)
+	if err != nil {
+		return false, err
+	}
+
+	return util.IsText(data[:num_bytes]), nil
 }

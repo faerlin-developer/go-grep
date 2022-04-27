@@ -10,6 +10,7 @@ type Result struct {
 	Filepath      string
 	SearchPattern string
 	Lines         []Line
+	IsTextFile    bool
 }
 
 type Results struct {
@@ -33,7 +34,7 @@ func (results *Results) Close() {
 }
 
 func NewResult(filepath string, searchPattern string) *Result {
-	return &Result{filepath, searchPattern, make([]Line, 0)}
+	return &Result{filepath, searchPattern, make([]Line, 0), true}
 }
 
 func NewResults(size int) *Results {

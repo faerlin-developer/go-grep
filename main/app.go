@@ -25,30 +25,15 @@ func init() {
 
 func main() {
 
-	settingsMenuItem := fyne.NewMenuItem("Settings", func() {
-		w := application.NewWindow("Settings")
-		w.Resize(fyne.NewSize(480, 480))
-		w.Show()
-	})
-
-	aboutMenuItem := fyne.NewMenuItem("About", func() {
-		w := application.NewWindow("About")
-		w.Resize(fyne.NewSize(480, 480))
-		w.Show()
-	})
-
-	menu := fyne.NewMenu("Menu", settingsMenuItem, aboutMenuItem)
-	mainMenu := fyne.NewMainMenu(menu)
-	window.SetMainMenu(mainMenu)
-
+	menu := createMenu()
 	middle := createMiddleComponent()
 	bottom := createBottomComponent()
-
 	content := container.New(layout.NewBorderLayout(nil, bottom, nil, nil),
 		bottom, middle)
 
 	application.Settings().SetTheme(theme.DarkTheme())
 
+	window.SetMainMenu(menu)
 	window.SetMaster()
 	window.CenterOnScreen()
 	window.SetContent(content)

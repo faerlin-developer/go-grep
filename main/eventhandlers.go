@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"go-grep/grep"
 	"log"
-	"os"
 	"strings"
 
 	"fyne.io/fyne/v2"
@@ -37,22 +36,34 @@ func formSubmitHandler() {
 
 	infoDialog := dialog.NewInformation("Info", "Processing...", window)
 	infoDialog.Show()
-	err := grepAndDisplay()
+	num_files, num_text_files, num_matched_files, num_matched_lines, err := grepAndDisplay()
 	if err != nil {
 		infoDialog.Hide()
 		log.Println(err.Error())
 		dialog.ShowError(err, window)
 	} else {
 		infoDialog.Hide()
+		msgLine1 := fmt.Sprintf("Found %v matching lines in %v text files", num_matched_lines, num_matched_files)
+		msgLine2 := fmt.Sprintf("Total number of text files found: %v", num_text_files)
+		msgLine3 := fmt.Sprintf("Total number of files (including non text-files) found: %v", num_files)
+		dialog.ShowInformation("Info", fmt.Sprintf("%v\n\n%v\n%v", msgLine1, msgLine2, msgLine3), window)
 	}
+
+	if num_matched_lines == 0 {
+		state.View.ShowDefaultView()
+	}
+
+	log.Println(state.UserInput.GetNumberWorkers())
+	log.Println(state.UserInput.GetBufferSize())
+
+	log.Println(num_text_files)
+	log.Println(num_matched_lines)
+
 }
 
 func formCancelHandler() {
-	// TODO: introduction or instructions on text grid
-	cwd, _ := os.Getwd()
 	state.View.Clear()
-	state.View.AppendText("")
-	state.View.AppendText(fmt.Sprintf("Current working directory: %v", cwd))
+	state.View.ShowDefaultView()
 	state.UserInput.ClearSearchPath()
 	state.UserInput.ClearSearchTerm()
 
@@ -83,15 +94,6 @@ func folderDialogButtonHandler(list fyne.ListableURI, err error) {
 		return
 	}
 
-	//children, err := list.List()
-	//if err != nil {
-	//	dialog.ShowError(err, window)
-	//	return
-	//}
-
-	//out := fmt.Sprintf("Folder %s (%d children):\n%s", list.Name(), len(children), list.String())
-	//dialog.ShowInformation("Folder Open", out, window)
-
 	dirpath := getPath(list.String())
 	state.UserInput.SetSearchPath(dirpath)
 }
@@ -100,26 +102,38 @@ func getPath(uri string) string {
 	return strings.Split(uri, "file://")[1]
 }
 
-func grepAndDisplay() error {
+func grepAndDisplay() (int, int, int, int, error) {
 
 	searchPath := state.UserInput.GetSearchPath()
 	searchTerm := state.UserInput.GetSearchTerm()
 
 	results, err := grep.Grep(searchPath, searchTerm)
 	if err != nil {
-		return err
+		return 0, 0, 0, 0, err
 	}
 
 	state.View.Clear()
 	state.View.TextGrid.ShowLineNumbers = true
 
+	num_files := 0
+	num_text_files := 0
+	num_matched_files := 0
+	num_matched_lines := 0
+
 	for result := range results.Channel {
-		displayResult(result)
+		num_files += 1
+		if result.IsTextFile {
+			num_text_files += 1
+		}
+		if !result.IsEmpty() {
+			displayResult(result)
+			num_matched_lines += len(result.Lines)
+			num_matched_files += 1
+		}
 	}
+	log.Println("Finished processing results")
 
-	log.Println("Finished processing all results")
-
-	return nil
+	return num_files, num_text_files, num_matched_files, num_matched_lines, nil
 }
 
 func displayResult(result grep.Result) {

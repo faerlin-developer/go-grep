@@ -2,7 +2,10 @@ module go-grep
 
 go 1.17
 
-require fyne.io/fyne/v2 v2.1.4
+require (
+	fyne.io/fyne/v2 v2.1.4
+	golang.org/x/tools v0.1.5
+)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

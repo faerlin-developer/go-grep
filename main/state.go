@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"go-grep/grep"
 	"image/color"
+	"os"
 	"strconv"
 
 	"fyne.io/fyne/v2/container"
@@ -19,6 +21,8 @@ type UserInput struct {
 	SelectedOption RadioOption
 	SearchPath     *binding.String
 	SearchPattern  *binding.String
+	NumberWorkers  *binding.String
+	BufferSize     *binding.String
 }
 
 type View struct {
@@ -60,6 +64,21 @@ func (v *View) Clear() {
 	v.Scroll.Refresh()
 }
 
+func (v *View) ShowDefaultView() {
+	state.View.Clear()
+	cwd, _ := os.Getwd()
+	state.View.AppendText("")
+	state.View.AppendText("")
+	state.View.AppendText("┌─┐┌─┐   ┌─┐┬─┐┌─┐┌─┐")
+	state.View.AppendText("│ ┬│ │───│ ┬├┬┘├┤ ├─┘")
+	state.View.AppendText("└─┘└─┘   └─┘┴└─└─┘┴   is a blah blah blah ")
+	state.View.AppendText("")
+	state.View.AppendText(fmt.Sprintf("Current working directory: %v", cwd))
+	state.View.TextGrid.ShowLineNumbers = false
+}
+
+// a command-line utility for searching plain-text data sets for lines that match a regular expression.
+
 // ----- UserInput -----
 
 func (u *UserInput) SetSelectedOption(selectedOption string) {
@@ -92,6 +111,26 @@ func (u *UserInput) ClearSearchTerm() {
 	(*(u.SearchPattern)).Set("")
 }
 
+func (u *UserInput) SetNumberWorkers(numberWorkers int) {
+	(*(u.NumberWorkers)).Set(strconv.Itoa(numberWorkers))
+}
+
+func (u *UserInput) GetNumberWorkers() int {
+	value, _ := (*(u.NumberWorkers)).Get()
+	intValue, _ := strconv.Atoi(value)
+	return intValue
+}
+
+func (u *UserInput) SetBufferSize(bufferSize int) {
+	(*(u.BufferSize)).Set(strconv.Itoa(bufferSize))
+}
+
+func (u *UserInput) GetBufferSize() int {
+	value, _ := (*(u.BufferSize)).Get()
+	intValue, _ := strconv.Atoi(value)
+	return intValue
+}
+
 func (v *View) AppendText(text string) {
 	nextRow := v.nextRow
 	v.SetText(nextRow, text)
@@ -121,6 +160,8 @@ func (v *View) AppendResult(filepath string, line string, lineNumber int, indice
 func NewState() State {
 	userInput := NewUserInput()
 	view := NewView()
+	userInput.SetNumberWorkers(grep.DefaultNumberWorkers)
+	userInput.SetBufferSize(grep.DefaultBufferSize)
 	return State{UserInput: userInput, View: view}
 }
 
@@ -134,7 +175,10 @@ func NewView() View {
 func NewUserInput() UserInput {
 	searchPath := binding.NewString()
 	searchPattern := binding.NewString()
-	return UserInput{SelectedOption: File, SearchPath: &searchPath, SearchPattern: &searchPattern}
+	numberWorkers := binding.NewString()
+	bufferSize := binding.NewString()
+	return UserInput{SelectedOption: File, SearchPath: &searchPath,
+		SearchPattern: &searchPattern, NumberWorkers: &numberWorkers, BufferSize: &bufferSize}
 }
 
 // ----- Private Utility Functions -----
