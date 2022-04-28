@@ -82,8 +82,6 @@ func (v *View) ShowDefaultView() {
 	state.View.TextGrid.ShowLineNumbers = false
 }
 
-// a command-line utility for searching plain-text data sets for lines that match a regular expression.
-
 // ----- UserInput -----
 
 func (u *UserInput) SetSelectedOption(selectedOption string) {

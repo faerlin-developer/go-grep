@@ -1,3 +1,5 @@
 # __go-grep__
 
-In progress ...
+<img src="img/main_window.png" alt="drawing" width="500"/>
+
+<img src="img/result_window.png" alt="drawing" width="500"/>
