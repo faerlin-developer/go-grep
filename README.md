@@ -4,6 +4,21 @@ __Go-grep__ is a graphical utility for searching text files for lines that match
 
 <img src="img/main_window.png" alt="drawing" width="400"/><img src="img/result_window.png" alt="drawing" width="400"/>
 
+## How To Run In Linux
+
+First, you must have `golang` and `gcc` installed on your Linux operating system. Next, install the dependencies of the [fyne](https://fyne.io/) module:
+
+```bash
+$ sudo apt-get install libgl1-mesa-dev xorg-dev
+```
+
+Compile and run the go-grep application:
+
+```bash
+$ go build main/*
+$ ./app
+```
+
 ## Built With
 
 - [Go](https://go.dev/)
