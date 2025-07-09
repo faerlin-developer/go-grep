@@ -7,7 +7,7 @@ __Go-grep__ is a graphical utility for searching text files for lines that match
 
 ## How To Run In Linux
 
-First, you must have `golang` and `gcc` installed on your Linux operating system. Next, install the dependencies of the [fyne](https://fyne.io/) module:
+Install the dependencies of the [fyne](https://fyne.io/) module:
 
 ```bash
 $ sudo apt-get install libgl1-mesa-dev xorg-dev
